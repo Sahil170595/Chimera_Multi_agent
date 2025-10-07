@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  orchestrator:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.orchestrator
+    ports:
+      - "8000:8000"
+    environment:
+      - CH_HOST=${CH_HOST:-clickhouse}
+      - CH_PORT=${CH_PORT:-9000}
+      - CH_USER=${CH_USER:-default}
+      - CH_PASSWORD=${CH_PASSWORD:-}
+      - CH_DATABASE=${CH_DATABASE:-muse_protocol}
+      - DD_API_KEY=${DD_API_KEY}
+      - DD_APP_KEY=${DD_APP_KEY}
+      - DD_SITE=${DD_SITE:-datadoghq.com}
+      - DEEPL_API_KEY=${DEEPL_API_KEY}
+      - DEEPL_API_URL=${DEEPL_API_URL:-https://api-free.deepl.com/v2}
+      - REPO_PATH=${REPO_PATH:-.}
+      - REPO_BRANCH=${REPO_BRANCH:-main}
+      - REPO_AUTHOR_NAME=${REPO_AUTHOR_NAME}
+      - REPO_AUTHOR_EMAIL=${REPO_AUTHOR_EMAIL}
+      - AGENT_MODEL=${AGENT_MODEL:-gpt-4}
+      - AGENT_MAX_TOKENS=${AGENT_MAX_TOKENS:-4000}
+      - AGENT_TEMPERATURE=${AGENT_TEMPERATURE:-0.7}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_FORMAT=${LOG_FORMAT:-json}
+    volumes:
+      - ../posts:/app/posts
+      - ../posts_i18n:/app/posts_i18n
+      - ../reports:/app/reports
+    depends_on:
+      - clickhouse
+    restart: unless-stopped
+
+  cli:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.cli
+    environment:
+      - CH_HOST=${CH_HOST:-clickhouse}
+      - CH_PORT=${CH_PORT:-9000}
+      - CH_USER=${CH_USER:-default}
+      - CH_PASSWORD=${CH_PASSWORD:-}
+      - CH_DATABASE=${CH_DATABASE:-muse_protocol}
+      - DD_API_KEY=${DD_API_KEY}
+      - DD_APP_KEY=${DD_APP_KEY}
+      - DD_SITE=${DD_SITE:-datadoghq.com}
+      - DEEPL_API_KEY=${DEEPL_API_KEY}
+      - DEEPL_API_URL=${DEEPL_API_URL:-https://api-free.deepl.com/v2}
+      - REPO_PATH=${REPO_PATH:-.}
+      - REPO_BRANCH=${REPO_BRANCH:-main}
+      - REPO_AUTHOR_NAME=${REPO_AUTHOR_NAME}
+      - REPO_AUTHOR_EMAIL=${REPO_AUTHOR_EMAIL}
+      - AGENT_MODEL=${AGENT_MODEL:-gpt-4}
+      - AGENT_MAX_TOKENS=${AGENT_MAX_TOKENS:-4000}
+      - AGENT_TEMPERATURE=${AGENT_TEMPERATURE:-0.7}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_FORMAT=${LOG_FORMAT:-json}
+    volumes:
+      - ../posts:/app/posts
+      - ../posts_i18n:/app/posts_i18n
+      - ../reports:/app/reports
+    depends_on:
+      - clickhouse
+    profiles:
+      - cli
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    environment:
+      - CLICKHOUSE_DB=${CH_DATABASE:-muse_protocol}
+      - CLICKHOUSE_USER=${CH_USER:-default}
+      - CLICKHOUSE_PASSWORD=${CH_PASSWORD:-}
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - ./clickhouse-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    restart: unless-stopped
+
+volumes:
+  clickhouse_data:
+

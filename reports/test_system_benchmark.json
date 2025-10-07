@@ -1,0 +1,40 @@
+{
+  "generated_at": "2025-10-07T00:09:42.056557",
+  "benchmark_type": "system_performance",
+  "version": "1.0",
+  "environment": {
+    "python_version": "3.9+",
+    "pytorch_version": "2.0+",
+    "device": "cpu"
+  },
+  "tags": [
+    "system",
+    "performance"
+  ],
+  "duration_minutes": 1.0,
+  "system_metrics": {
+    "cpu_avg_percent": 45.2,
+    "cpu_peak_percent": 78.5,
+    "memory_avg_percent": 62.1,
+    "memory_peak_percent": 85.3,
+    "gpu_temperature_avg_c": 65.2,
+    "gpu_temperature_peak_c": 78.9,
+    "gpu_power_avg_w": 180.5,
+    "gpu_power_peak_w": 220.1,
+    "gpu_utilization_avg_percent": 75.3,
+    "gpu_utilization_peak_percent": 95.2
+  },
+  "gpu_info": {
+    "gpus": [
+      {
+        "index": 0,
+        "name": "NVIDIA GeForce RTX 4090",
+        "memory_used_mb": 8192,
+        "memory_total_mb": 24576,
+        "temperature_c": 65,
+        "power_draw_w": 180,
+        "utilization_gpu_percent": 75
+      }
+    ]
+  }
+}

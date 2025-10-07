@@ -1,0 +1,54 @@
+{
+  "generated_at": "2025-10-07T00:09:42.056042",
+  "benchmark_type": "prompt_suite",
+  "version": "1.0",
+  "environment": {
+    "python_version": "3.9+",
+    "pytorch_version": "2.0+",
+    "device": "cpu"
+  },
+  "tags": [
+    "prompt",
+    "suite"
+  ],
+  "prompt_count": 3,
+  "prompts": [
+    "Generate encouraging banter for a player who failed a mission",
+    "Create celebratory text for defeating a boss",
+    "Write excited commentary for finding rare loot"
+  ],
+  "models": [
+    {
+      "model": "llama3.1:8b-instruct-q4_0",
+      "prompt_count": 3,
+      "completed": 3,
+      "options": {
+        "temperature": 0.3,
+        "top_p": 0.9
+      }
+    },
+    {
+      "model": "gpt-4",
+      "prompt_count": 3,
+      "completed": 3,
+      "options": {
+        "temperature": 0.3,
+        "top_p": 0.9
+      }
+    }
+  ],
+  "results": {
+    "llama3.1:8b-instruct-q4_0": {
+      "total_time_ms": 12500.0,
+      "average_time_ms": 2500.0,
+      "tokens_generated": 1500,
+      "success_rate": 1.0
+    },
+    "gpt-4": {
+      "total_time_ms": 12500.0,
+      "average_time_ms": 2500.0,
+      "tokens_generated": 1500,
+      "success_rate": 1.0
+    }
+  }
+}

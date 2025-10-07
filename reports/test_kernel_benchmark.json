@@ -1,0 +1,58 @@
+{
+  "generated_at": "2025-10-07T00:09:42.053293",
+  "benchmark_type": "kernel_optimization",
+  "version": "1.0",
+  "environment": {
+    "python_version": "3.9+",
+    "pytorch_version": "2.0+",
+    "device": "cpu"
+  },
+  "tags": [
+    "kernel",
+    "optimization"
+  ],
+  "kernels": {
+    "attention": {
+      "torch": {
+        "mean_time_ms": 24.6,
+        "std_time_ms": 73.2,
+        "min_time_ms": 0.17,
+        "max_time_ms": 244.1
+      },
+      "flash_attention": {
+        "mean_time_ms": 12.3,
+        "std_time_ms": 36.6,
+        "min_time_ms": 0.08,
+        "max_time_ms": 122.0
+      }
+    },
+    "tensor_core": {
+      "512x512x512": {
+        "mean_time_ms": 16.7,
+        "std_time_ms": 50.0,
+        "min_time_ms": 0.03,
+        "max_time_ms": 166.6
+      },
+      "1024x1024x1024": {
+        "mean_time_ms": 65.2,
+        "std_time_ms": 195.5,
+        "min_time_ms": 0.12,
+        "max_time_ms": 650.8
+      }
+    },
+    "fusion": {
+      "baseline_linear_gelu": {
+        "mean_time_ms": 0.76,
+        "std_time_ms": 2.05,
+        "min_time_ms": 0.04,
+        "max_time_ms": 6.92
+      },
+      "fused_linear_gelu": {
+        "mean_time_ms": 0.05,
+        "std_time_ms": 0.01,
+        "min_time_ms": 0.04,
+        "max_time_ms": 0.07
+      }
+    }
+  }
+}

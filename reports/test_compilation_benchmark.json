@@ -1,0 +1,124 @@
+{
+  "generated_at": "2025-10-07T00:09:42.051589",
+  "benchmark_type": "compilation",
+  "version": "1.0",
+  "environment": {
+    "python_version": "3.9+",
+    "pytorch_version": "2.0+",
+    "device": "cpu"
+  },
+  "tags": [
+    "compilation",
+    "performance"
+  ],
+  "model": {
+    "name": "llama3.1:8b-instruct-q4_0",
+    "device": "cpu",
+    "dtype": "torch.float32",
+    "batch_size": 1,
+    "seq_len": 512
+  },
+  "settings": {
+    "runs": 10,
+    "warmup_runs": 3,
+    "backends": [
+      "eager",
+      "jit",
+      "torch_compile",
+      "onnx"
+    ]
+  },
+  "backends": {
+    "eager": {
+      "backend": "eager",
+      "compilation": {
+        "backend": "eager",
+        "success": true,
+        "compile_time_s": 0.0,
+        "metadata": {},
+        "error": null
+      },
+      "benchmark": {
+        "backend": "eager",
+        "mean_time_ms": 24.7,
+        "std_time_ms": 2.2,
+        "min_time_ms": 21.7,
+        "max_time_ms": 30.2,
+        "metadata": {
+          "compile_time_s": 0.0
+        }
+      }
+    },
+    "jit": {
+      "backend": "jit",
+      "compilation": {
+        "backend": "jit",
+        "success": true,
+        "compile_time_s": 0.175,
+        "metadata": {
+          "strict": false,
+          "frozen": true
+        },
+        "error": null
+      },
+      "benchmark": {
+        "backend": "jit",
+        "mean_time_ms": 4.9,
+        "std_time_ms": 2.2,
+        "min_time_ms": 21.7,
+        "max_time_ms": 30.2,
+        "metadata": {
+          "compile_time_s": 0.175
+        }
+      }
+    },
+    "torch_compile": {
+      "backend": "torch_compile",
+      "compilation": {
+        "backend": "torch_compile",
+        "success": true,
+        "compile_time_s": 0.898,
+        "metadata": {
+          "backend": "inductor",
+          "mode": "default"
+        },
+        "error": null
+      },
+      "benchmark": {
+        "backend": "torch_compile",
+        "mean_time_ms": 5.7,
+        "std_time_ms": 2.2,
+        "min_time_ms": 21.7,
+        "max_time_ms": 30.2,
+        "metadata": {
+          "compile_time_s": 0.898
+        }
+      }
+    },
+    "onnx": {
+      "backend": "onnx",
+      "compilation": {
+        "backend": "onnx",
+        "success": true,
+        "compile_time_s": 0.313,
+        "metadata": {
+          "opset": 17,
+          "providers": [
+            "CPUExecutionProvider"
+          ]
+        },
+        "error": null
+      },
+      "benchmark": {
+        "backend": "onnx",
+        "mean_time_ms": 2.8,
+        "std_time_ms": 2.2,
+        "min_time_ms": 21.7,
+        "max_time_ms": 30.2,
+        "metadata": {
+          "compile_time_s": 0.313
+        }
+      }
+    }
+  }
+}

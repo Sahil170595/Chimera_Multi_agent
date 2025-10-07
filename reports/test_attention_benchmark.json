@@ -1,0 +1,100 @@
+{
+  "generated_at": "2025-10-07T00:09:42.055207",
+  "benchmark_type": "attention_mechanism",
+  "version": "1.0",
+  "environment": {
+    "python_version": "3.9+",
+    "pytorch_version": "2.0+",
+    "device": "cpu"
+  },
+  "tags": [
+    "attention",
+    "mechanism"
+  ],
+  "model": {
+    "name": "llama3.1:8b-instruct-q4_0",
+    "device": "cpu",
+    "dtype": "torch.float32",
+    "batch_size": 1,
+    "seq_len": 512
+  },
+  "attention_configs": {
+    "mqa": {
+      "mechanism": "mqa",
+      "num_heads": 8,
+      "head_dim": 64,
+      "num_kv_heads": 1
+    },
+    "gqa": {
+      "mechanism": "gqa",
+      "num_heads": 8,
+      "head_dim": 64,
+      "num_kv_heads": 2
+    },
+    "sliding_window": {
+      "mechanism": "sliding_window",
+      "num_heads": 8,
+      "head_dim": 64,
+      "window_size": 128
+    },
+    "sparse": {
+      "mechanism": "sparse",
+      "num_heads": 8,
+      "head_dim": 64,
+      "sparsity_ratio": 0.5,
+      "sparse_pattern": "strided"
+    }
+  },
+  "performance_results": {
+    "mqa": {
+      "mean_time_ms": 15.0,
+      "std_time_ms": 1.5,
+      "min_time_ms": 12.0,
+      "max_time_ms": 18.0,
+      "throughput_tokens_per_sec": 66.66666666666667,
+      "memory_used_mb": 500.0
+    },
+    "gqa": {
+      "mean_time_ms": 17.5,
+      "std_time_ms": 1.75,
+      "min_time_ms": 14.0,
+      "max_time_ms": 21.0,
+      "throughput_tokens_per_sec": 57.142857142857146,
+      "memory_used_mb": 500.0
+    },
+    "sliding_window": {
+      "mean_time_ms": 20.0,
+      "std_time_ms": 2.0,
+      "min_time_ms": 16.0,
+      "max_time_ms": 24.0,
+      "throughput_tokens_per_sec": 50.0,
+      "memory_used_mb": 500.0
+    },
+    "sparse": {
+      "mean_time_ms": 12.5,
+      "std_time_ms": 1.25,
+      "min_time_ms": 10.0,
+      "max_time_ms": 15.0,
+      "throughput_tokens_per_sec": 80.0,
+      "memory_used_mb": 500.0
+    }
+  },
+  "cross_comparison": {
+    "mqa": {
+      "speedup_vs_mqa": 1.6666666666666667,
+      "memory_efficiency": 0.8
+    },
+    "gqa": {
+      "speedup_vs_mqa": 1.4285714285714286,
+      "memory_efficiency": 0.8
+    },
+    "sliding_window": {
+      "speedup_vs_mqa": 1.25,
+      "memory_efficiency": 0.8
+    },
+    "sparse": {
+      "speedup_vs_mqa": 2.0,
+      "memory_efficiency": 1.0
+    }
+  }
+}

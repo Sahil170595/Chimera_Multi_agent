@@ -1,0 +1,56 @@
+{
+  "generated_at": "2025-10-07T00:09:42.057287",
+  "benchmark_type": "inference_performance",
+  "version": "1.0",
+  "environment": {
+    "python_version": "3.9+",
+    "pytorch_version": "2.0+",
+    "device": "cpu"
+  },
+  "tags": [
+    "inference",
+    "performance"
+  ],
+  "model": {
+    "name": "llama3.1:8b-instruct-q4_0",
+    "device": "cpu",
+    "dtype": "torch.float32",
+    "batch_size": 1,
+    "seq_len": 512
+  },
+  "test_scenarios": [
+    {
+      "context": "player_died",
+      "tone": "encouraging",
+      "game_type": "rpg",
+      "player_level": 25
+    },
+    {
+      "context": "boss_defeated",
+      "tone": "celebratory",
+      "game_type": "action",
+      "player_level": 50
+    },
+    {
+      "context": "rare_item_drop",
+      "tone": "excited",
+      "game_type": "mmo",
+      "player_level": 75
+    }
+  ],
+  "generation_times": [
+    2500.0,
+    2400.0,
+    2600.0,
+    2550.0,
+    2450.0
+  ],
+  "total_tokens": 4000,
+  "performance_summary": {
+    "average_time_ms": 2500.0,
+    "min_time_ms": 2400.0,
+    "max_time_ms": 2600.0,
+    "tokens_per_second": 320.0,
+    "total_scenarios": 3
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "generated_at": "2025-10-07T00:09:42.052655",
+  "benchmark_type": "quantization",
+  "version": "1.0",
+  "environment": {
+    "python_version": "3.9+",
+    "pytorch_version": "2.0+",
+    "device": "cpu"
+  },
+  "tags": [
+    "quantization",
+    "accuracy"
+  ],
+  "model": {
+    "name": "llama3.1:8b-instruct-q4_0",
+    "device": "cpu",
+    "dtype": "torch.float32",
+    "batch_size": 1,
+    "seq_len": 512
+  },
+  "quantization_methods": {
+    "baseline": {
+      "accuracy": 0.75,
+      "loss": 0.608,
+      "model_size_bytes": 2781
+    },
+    "int8": {
+      "accuracy": 0.735,
+      "loss": 0.62016,
+      "model_size_bytes": 2085
+    },
+    "fp8": {
+      "accuracy": 0.75,
+      "loss": 0.608,
+      "model_size_bytes": 2781
+    },
+    "qat": {
+      "accuracy": 0.375,
+      "loss": 1.0335999999999999,
+      "model_size_bytes": 3337
+    }
+  }
+}
