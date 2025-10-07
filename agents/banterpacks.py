@@ -4,9 +4,8 @@ import logging
 import uuid
 from datetime import datetime
 from typing import Dict, Any, Optional
-from pathlib import Path
+ 
 from apps.config import AgentConfig
-
 
 logger = logging.getLogger(__name__)
 
@@ -122,4 +121,3 @@ Upcoming priorities:
             content += f"\n\n**SQL Query Used:**\n```sql\n{sql}\n```\n"
 
         return content
-

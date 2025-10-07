@@ -2,12 +2,22 @@
 
 import logging
 import time
-from typing import Dict, Any, List, Optional
-from datadog_api_client import ApiClient, Configuration
-from datadog_api_client.v1.api.metrics_api import MetricsApi
-from datadog_api_client.v1.api.traces_api import TracesApi
-from datadog_api_client.v1.model.metric_payload import MetricPayload
-from datadog_api_client.v1.model.series import Series
+from typing import Dict, Any, List, Optional, Union
+
+try:
+    from datadog_api_client import ApiClient, Configuration
+    from datadog_api_client.v1.api.metrics_api import MetricsApi
+    from datadog_api_client.v1.model.metric_payload import MetricPayload
+    from datadog_api_client.v1.model.series import Series
+    _DD_AVAILABLE = True
+except Exception:
+    ApiClient = None  # type: ignore
+    Configuration = None  # type: ignore
+    MetricsApi = None  # type: ignore
+    MetricPayload = None  # type: ignore
+    Series = None  # type: ignore
+    _DD_AVAILABLE = False
+
 from apps.config import DatadogConfig
 
 
@@ -17,22 +27,23 @@ logger = logging.getLogger(__name__)
 class DatadogClient:
     """Datadog client wrapper."""
 
-    def __init__(self, config: DatadogConfig):
+    def __init__(self, config: Optional[DatadogConfig] = None, api_key: Optional[str] = None,
+                 app_key: Optional[str] = None, site: Optional[str] = None):
         """Initialize Datadog client.
 
-        Args:
-            config: Datadog configuration
+        Accepts either a DatadogConfig or explicit api_key/app_key/site.
         """
+        if config is None:
+            config = DatadogConfig(api_key=api_key or "", app_key=app_key or "", site=site or "datadoghq.com")
         self.config = config
         self.api_client: Optional[ApiClient] = None
         self.metrics_api: Optional[MetricsApi] = None
-        self.traces_api: Optional[TracesApi] = None
-        self._enabled = bool(config.api_key and config.app_key)
+        self._enabled = bool(_DD_AVAILABLE and config.api_key and config.app_key)
 
     def connect(self) -> None:
         """Initialize Datadog API client."""
         if not self._enabled:
-            logger.warning("Datadog disabled - no API keys provided")
+            logger.warning("Datadog disabled - no API keys or library not available")
             return
 
         try:
@@ -43,7 +54,6 @@ class DatadogClient:
 
             self.api_client = ApiClient(configuration)
             self.metrics_api = MetricsApi(self.api_client)
-            self.traces_api = TracesApi(self.api_client)
 
             logger.info("Connected to Datadog")
         except Exception as e:
@@ -62,15 +72,19 @@ class DatadogClient:
         try:
             if not self.api_client:
                 self.connect()
-
-            # Simple health check - try to get metrics
-            # This is a lightweight operation
             return True
         except Exception as e:
             logger.warning(f"Datadog health check failed: {e}")
             return False
 
-    def send_metric(self, name: str, value: float, tags: Optional[Dict[str, str]] = None) -> None:
+    def _normalize_tags(self, tags: Optional[Union[Dict[str, str], List[str]]]) -> List[str]:
+        if tags is None:
+            return []
+        if isinstance(tags, list):
+            return tags
+        return [f"{k}:{v}" for k, v in tags.items()]
+
+    def send_metric(self, name: str, value: float, tags: Optional[Union[Dict[str, str], List[str]]] = None) -> None:
         """Send metric to Datadog.
 
         Args:
@@ -89,7 +103,7 @@ class DatadogClient:
             series = Series(
                 metric=name,
                 points=[[int(time.time()), value]],
-                tags=[f"{k}:{v}" for k, v in (tags or {}).items()]
+                tags=self._normalize_tags(tags)
             )
 
             payload = MetricPayload(series=[series])
@@ -99,16 +113,20 @@ class DatadogClient:
         except Exception as e:
             logger.error(f"Failed to send metric {name}: {e}")
 
+    # Thin helpers for common metric patterns
+    def increment(self, name: str, value: float = 1.0, tags: Optional[Union[Dict[str, str], List[str]]] = None) -> None:
+        self.send_metric(name, float(value), tags)
+
+    def gauge(self, name: str, value: float, tags: Optional[Union[Dict[str, str], List[str]]] = None) -> None:
+        self.send_metric(name, float(value), tags)
+
     def send_episode_metrics(self, episode_data: Dict[str, Any]) -> None:
         """Send episode-related metrics.
 
         Args:
             episode_data: Episode data dictionary
         """
-        tags = {
-            "series": episode_data.get("series", "unknown"),
-            "model": ",".join(episode_data.get("models", [])),
-        }
+        tags = {"series": episode_data.get("series", "unknown"), "model": ",".join(episode_data.get("models", []))}
 
         # Send various metrics
         self.send_metric("muse.episode.latency_p95", episode_data.get("latency_ms_p95", 0), tags)
@@ -123,37 +141,20 @@ class DatadogClient:
         Args:
             translation_data: Translation data dictionary
         """
-        tags = {
-            "source_series": translation_data.get("source_series", "unknown"),
-            "target_language": translation_data.get("target_language", "unknown"),
-        }
+        tags = {"source_series": translation_data.get("source_series", "unknown"),
+                "target_language": translation_data.get("target_language", "unknown")}
 
         self.send_metric("muse.translation.count", 1, tags)
 
     def start_trace(self, operation: str, tags: Optional[Dict[str, str]] = None) -> 'DatadogTrace':
-        """Start a new trace.
-
-        Args:
-            operation: Operation name
-            tags: Optional tags
-
-        Returns:
-            DatadogTrace object
-        """
+        """Start a new trace (metrics-only timing)."""
         return DatadogTrace(self, operation, tags)
 
 
 class DatadogTrace:
-    """Context manager for Datadog traces."""
+    """Context manager for Datadog traces (metrics-only)."""
 
     def __init__(self, client: DatadogClient, operation: str, tags: Optional[Dict[str, str]] = None):
-        """Initialize trace.
-
-        Args:
-            client: Datadog client
-            operation: Operation name
-            tags: Optional tags
-        """
         self.client = client
         self.operation = operation
         self.tags = tags or {}
@@ -161,92 +162,58 @@ class DatadogTrace:
         self._enabled = client._enabled
 
     def __enter__(self):
-        """Enter trace context."""
         if self._enabled:
             logger.debug(f"Starting trace: {self.operation}")
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """Exit trace context."""
         if not self._enabled:
             return
-
         duration = time.time() - self.start_time
-
-        # Add duration metric
         self.client.send_metric(
             f"muse.trace.{self.operation}.duration",
-            duration * 1000,  # Convert to milliseconds
+            duration * 1000,
             self.tags
         )
-
-        # Add success/failure metric
         status = "success" if exc_type is None else "error"
-        self.tags["status"] = status
-        self.client.send_metric(
-            f"muse.trace.{self.operation}.count",
-            1,
-            self.tags
-        )
-
-        logger.debug(f"Completed trace: {self.operation} ({duration:.2f}s)")
+        tags = {**self.tags, "status": status}
+        self.client.send_metric(f"muse.trace.{self.operation}.count", 1, tags)
 
 
 class MockDatadogClient:
     """Mock Datadog client for testing."""
 
     def __init__(self, config: DatadogConfig):
-        """Initialize mock client."""
         self.config = config
         self.metrics: List[Dict[str, Any]] = []
         self.traces: List[Dict[str, Any]] = []
 
     def ready(self) -> bool:
-        """Mock ready check."""
         return True
 
     def send_metric(self, name: str, value: float, tags: Optional[Dict[str, str]] = None) -> None:
-        """Mock metric sending."""
-        self.metrics.append({
-            "name": name,
-            "value": value,
-            "tags": tags or {}
-        })
-        logger.debug(f"Mock: Sent metric {name}={value}")
+        self.metrics.append({"name": name, "value": value, "tags": tags or {}})
 
     def send_episode_metrics(self, episode_data: Dict[str, Any]) -> None:
-        """Mock episode metrics."""
-        logger.debug(f"Mock: Sent episode metrics for {episode_data.get('series', 'unknown')}")
+        pass
 
     def send_translation_metrics(self, translation_data: Dict[str, Any]) -> None:
-        """Mock translation metrics."""
-        logger.debug(f"Mock: Sent translation metrics for {translation_data.get('target_language', 'unknown')}")
+        pass
 
     def start_trace(self, operation: str, tags: Optional[Dict[str, str]] = None) -> 'MockDatadogTrace':
-        """Mock trace start."""
         return MockDatadogTrace(self, operation, tags)
 
 
 class MockDatadogTrace:
-    """Mock trace context manager."""
-
     def __init__(self, client: MockDatadogClient, operation: str, tags: Optional[Dict[str, str]] = None):
-        """Initialize mock trace."""
         self.client = client
         self.operation = operation
         self.tags = tags or {}
         self.start_time = time.time()
 
     def __enter__(self):
-        """Enter mock trace context."""
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """Exit mock trace context."""
         duration = time.time() - self.start_time
-        self.client.traces.append({
-            "operation": self.operation,
-            "duration": duration,
-            "tags": self.tags
-        })
-
+        self.client.traces.append({"operation": self.operation, "duration": duration, "tags": self.tags})

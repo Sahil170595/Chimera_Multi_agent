@@ -4,7 +4,7 @@ import logging
 import sys
 import uuid
 from pathlib import Path
-from typing import List
+ 
 import click
 from apps.config import load_config
 from schemas.episode import EpisodeValidator

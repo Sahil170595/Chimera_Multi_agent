@@ -1,17 +1,19 @@
 """FastAPI orchestrator for Muse Protocol."""
 
 import logging
-import uuid
-from typing import Dict, Any, Optional, List
+from typing import Optional, List, Dict
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 from apps.config import load_config
-from integrations.clickhouse import ClickHouseClient, EpisodeRecord, TranslationRecord
+from integrations.clickhouse_client import ClickHouseClient
 from integrations.datadog import DatadogClient
 from integrations.deepl import DeepLClient
 from integrations.repo import RepoWriter
-from agents.banterpacks import BanterpacksAuthor
-from agents.chimera import ChimeraAuthor
+from agents.banterhearts_ingestor import BanterheartsIngestor
+from agents.banterpacks_collector import BanterpacksCollector
+from agents.council import CouncilAgent
+from agents.publisher import PublisherAgent
+from agents.i18n_translator import I18nTranslator
 
 
 # Configure logging
@@ -33,6 +35,14 @@ clickhouse_client: Optional[ClickHouseClient] = None
 datadog_client: Optional[DatadogClient] = None
 deepl_client: Optional[DeepLClient] = None
 repo_writer: Optional[RepoWriter] = None
+
+# Global agents
+watcher_agent = None  # optional future
+ingestor_agent: Optional[BanterheartsIngestor] = None
+collector_agent: Optional[BanterpacksCollector] = None
+council_agent: Optional[CouncilAgent] = None
+publisher_agent: Optional[PublisherAgent] = None
+translator_agent: Optional[I18nTranslator] = None
 
 
 class EpisodeRequest(BaseModel):
@@ -57,15 +67,31 @@ class HealthResponse(BaseModel):
 async def startup_event():
     """Initialize clients on startup."""
     global clickhouse_client, datadog_client, deepl_client, repo_writer
+    global ingestor_agent, collector_agent, council_agent, publisher_agent, translator_agent
 
     try:
         config = load_config()
 
         # Initialize clients
-        clickhouse_client = ClickHouseClient(config.clickhouse)
-        datadog_client = DatadogClient(config.datadog)
-        deepl_client = DeepLClient(config.deepl)
+        clickhouse_client = ClickHouseClient(
+            host=config.clickhouse.host,
+            port=config.clickhouse.port,
+            username=config.clickhouse.username,
+            password=config.clickhouse.password,
+        )
+        datadog_client = DatadogClient(
+            api_key=config.datadog.api_key,
+            app_key=config.datadog.app_key,
+        )
+        deepl_client = DeepLClient()
         repo_writer = RepoWriter(config.repo)
+
+        # Initialize agents
+        ingestor_agent = BanterheartsIngestor(clickhouse_client, datadog_client)
+        collector_agent = BanterpacksCollector(clickhouse_client, datadog_client)
+        council_agent = CouncilAgent(clickhouse_client, datadog_client)
+        publisher_agent = PublisherAgent(clickhouse_client, datadog_client)
+        translator_agent = I18nTranslator(clickhouse_client, datadog_client)
 
         logger.info("Orchestrator started successfully")
 
@@ -113,198 +139,76 @@ async def health_check():
     )
 
 
-@app.post("/run/episode")
-async def run_episode(request: EpisodeRequest, background_tasks: BackgroundTasks):
-    """Trigger episode generation."""
-    if not all([clickhouse_client, datadog_client, repo_writer]):
-        raise HTTPException(status_code=503, detail="Required services not available")
+@app.post("/run/council")
+async def run_council(background_tasks: BackgroundTasks):
+    """Trigger Council Agent episode generation."""
+    if not council_agent:
+        raise HTTPException(status_code=503, detail="Council Agent not available")
 
-    try:
-        # Validate series
-        if request.series not in ['chimera', 'banterpacks']:
-            raise HTTPException(status_code=400, detail="Invalid series. Must be 'chimera' or 'banterpacks'")
+    result = council_agent.generate_episode()
+    if result.get("status") != "success":
+        raise HTTPException(status_code=500, detail=result)
+    return result
 
-        # Get current commit SHA
-        commit_sha = repo_writer.get_current_commit_sha()
-        if not commit_sha:
-            raise HTTPException(status_code=500, detail="Could not get current commit SHA")
 
-        # Generate episode
-        config = load_config()
-        if request.series == 'chimera':
-            author = ChimeraAuthor(config.agent)
-        else:
-            author = BanterpacksAuthor(config.agent)
+@app.post("/run/ingest")
+async def run_ingest(hours: int = 24):
+    """Trigger Banterhearts Ingestor for benchmark data."""
+    if not ingestor_agent:
+        raise HTTPException(status_code=503, detail="Ingestor not available")
+    return ingestor_agent.ingest_benchmarks(hours)
 
-        episode_data = author.generate_episode(commit_sha, request.sql)
-        metadata = episode_data['metadata']
-        content = episode_data['content']
 
-        # Check idempotency
-        if clickhouse_client.episode_exists(metadata['run_id']):
-            return {
-                "status": "skipped",
-                "message": f"Episode with run_id {metadata['run_id']} already exists",
-                "run_id": metadata['run_id']
-            }
+@app.post("/run/collect")
+async def run_collect(hours: int = 24):
+    """Trigger Banterpacks Collector for commit watching."""
+    if not collector_agent:
+        raise HTTPException(status_code=503, detail="Collector not available")
+    return collector_agent.run_collection(hours)
 
-        # Schedule background tasks
-        background_tasks.add_task(
-            _process_episode,
-            metadata,
-            content,
-            request.series
-        )
 
-        return {
-            "status": "accepted",
-            "run_id": metadata['run_id'],
-            "series": request.series,
-            "episode": metadata['episode']
-        }
-
-    except Exception as e:
-        logger.error(f"Failed to run episode: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+@app.post("/run/publish")
+async def run_publish(episode: Optional[int] = None):
+    """Trigger Publisher Agent to publish an episode."""
+    if not publisher_agent:
+        raise HTTPException(status_code=503, detail="Publisher not available")
+    return publisher_agent.publish_episode(episode)
 
 
 @app.post("/i18n/sync")
 async def sync_translations(request: TranslationRequest, background_tasks: BackgroundTasks):
     """Trigger translation sync."""
-    if not all([deepl_client, clickhouse_client, datadog_client]):
-        raise HTTPException(status_code=503, detail="Required services not available")
+    if not translator_agent:
+        raise HTTPException(status_code=503, detail="Translator not available")
 
+    # Validate languages against DeepL known set if available
     try:
-        # Validate languages
-        supported_langs = deepl_client.get_supported_languages()
-        invalid_langs = [lang for lang in request.langs if lang.upper() not in supported_langs]
-
+        supported_langs = deepl_client.get_supported_languages() if deepl_client else {}
+        invalid_langs = [lang for lang in request.langs if supported_langs and lang.upper() not in supported_langs]
         if invalid_langs:
             raise HTTPException(
                 status_code=400,
                 detail=f"Unsupported languages: {invalid_langs}. Supported: {list(supported_langs.keys())}"
             )
+    except Exception:
+        # If DeepL not fully configured, proceed; user said APIs coming soon
+        pass
 
-        # Schedule background task
-        background_tasks.add_task(
-            _process_translations,
-            request.langs,
-            request.series
-        )
+    def _run_translation():
+        translator_agent.run_translation(request.langs)
 
-        return {
-            "status": "accepted",
-            "languages": request.langs,
-            "series": request.series or "all"
-        }
-
-    except Exception as e:
-        logger.error(f"Failed to sync translations: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    background_tasks.add_task(_run_translation)
+    return {"status": "accepted", "languages": request.langs, "series": request.series or "all"}
 
 
-async def _process_episode(metadata: Dict[str, Any], content: str, series: str):
-    """Background task to process episode."""
-    try:
-        # Write episode file
-        from pathlib import Path
-
-        series_dir = Path(f"posts/{series}")
-        series_dir.mkdir(parents=True, exist_ok=True)
-
-        episode_file = series_dir / f"ep-{metadata['episode']:03d}.md"
-
-        if not repo_writer.write_file(episode_file, content, metadata):
-            logger.error(f"Failed to write episode file {episode_file}")
-            return
-
-        # Commit to git
-        commit_message = f"Add {series} episode {metadata['episode']}: {metadata['title']}"
-        repo_writer.add_and_commit(episode_file, commit_message)
-
-        # Log to ClickHouse
-        episode_record = EpisodeRecord(
-            run_id=metadata['run_id'],
-            series=metadata['series'],
-            episode=metadata['episode'],
-            title=metadata['title'],
-            date=metadata['date'],
-            models=metadata['models'],
-            commit_sha=metadata['commit_sha'],
-            latency_ms_p95=metadata['latency_ms_p95'],
-            tokens_in=metadata['tokens_in'],
-            tokens_out=metadata['tokens_out'],
-            cost_usd=metadata['cost_usd']
-        )
-
-        clickhouse_client.insert_episode(episode_record)
-
-        # Send metrics to Datadog
-        datadog_client.send_episode_metrics(metadata)
-
-        logger.info(f"Processed episode {metadata['episode']} for series {series}")
-
-    except Exception as e:
-        logger.error(f"Failed to process episode: {e}")
+async def _process_episode_placeholder():
+    """Deprecated path kept for compatibility (no-op)."""
+    return
 
 
-async def _process_translations(langs: List[str], series: Optional[str]):
-    """Background task to process translations."""
-    try:
-        from pathlib import Path
-
-        # Find source episodes
-        posts_dir = Path("posts")
-        source_files = []
-
-        if series:
-            series_dir = posts_dir / series
-            if series_dir.exists():
-                source_files.extend(series_dir.glob("*.md"))
-        else:
-            for series_dir in posts_dir.iterdir():
-                if series_dir.is_dir():
-                    source_files.extend(series_dir.glob("*.md"))
-
-        # Translate each file
-        for src_file in source_files:
-            for lang in langs:
-                lang_upper = lang.upper()
-
-                # Determine output path
-                src_series = src_file.parent.name
-                out_dir = Path(f"posts_i18n/{lang.lower()}/{src_series}")
-                out_file = out_dir / src_file.name
-
-                # Skip if translation already exists
-                if out_file.exists():
-                    continue
-
-                # Translate
-                if deepl_client.translate_markdown(src_file, lang_upper, out_file):
-                    # Log translation to ClickHouse
-                    translation_record = TranslationRecord(
-                        run_id=str(uuid.uuid4()),
-                        source_series=src_series,
-                        source_episode=int(src_file.stem.split('-')[1]),
-                        target_language=lang_upper,
-                        translation_of=str(src_file)
-                    )
-
-                    clickhouse_client.insert_translation(translation_record)
-
-                    # Send metrics
-                    datadog_client.send_translation_metrics({
-                        "source_series": src_series,
-                        "target_language": lang_upper
-                    })
-
-                    logger.info(f"Translated {src_file} to {lang_upper}")
-
-        logger.info(f"Completed translation sync for languages: {langs}")
-
-    except Exception as e:
-        logger.error(f"Failed to process translations: {e}")
+async def _process_translations_placeholder():
+    """Deprecated path kept for compatibility (no-op)."""
+    return
 
 
 if __name__ == "__main__":

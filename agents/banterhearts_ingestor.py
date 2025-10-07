@@ -393,6 +393,16 @@ class BanterheartsIngestor:
                 "duration_seconds": 0
             }
 
+    def ingest_benchmarks(self, run_id: Optional[str] = None) -> Dict[str, Any]:
+        """CLI compatibility wrapper: run full ingestion.
+
+        Args:
+            run_id: Optional run identifier filter
+        Returns:
+            Ingestion result dict
+        """
+        return self.run_ingestion(run_id)
+
 
 def run_banterhearts_ingestor():
     """Run Banterhearts Ingestor as standalone script."""
@@ -407,7 +417,8 @@ def run_banterhearts_ingestor():
         host=config.clickhouse.host,
         port=config.clickhouse.port,
         username=config.clickhouse.username,
-        password=config.clickhouse.password
+        password=config.clickhouse.password,
+        database=config.clickhouse.database
     )
 
     datadog = DatadogClient(

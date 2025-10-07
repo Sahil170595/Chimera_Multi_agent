@@ -126,12 +126,12 @@ class I18nTranslator:
         try:
             lines = content.split('\n')
 
-            if lines[0] == '---':
+            if lines and lines[0] == '---':
                 # Find closing frontmatter
                 for i, line in enumerate(lines[1:], 1):
                     if line == '---':
-                        frontmatter = '\n'.join(lines[:i+1])
-                        body = '\n'.join(lines[i+1:])
+                        frontmatter = '\n'.join(lines[: i + 1])
+                        body = '\n'.join(lines[i + 1 :])
                         return frontmatter, body
 
             # No frontmatter found
@@ -442,4 +442,3 @@ def run_i18n_translator():
 
 if __name__ == "__main__":
     run_i18n_translator()
-

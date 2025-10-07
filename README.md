@@ -146,3 +146,21 @@ make docker-up
 - PII safety - only log hashes/lengths, not raw content
 - Fast failure on missing config or schema violations
 
+## MCP Servers Overview
+We expose capabilities via MCP (stdio), each with its own folder and README:
+- `mcp/datadog/`: metrics, monitors, dashboards
+- `mcp/clickhouse/`: query + inserts + correlation window
+- `mcp/deepl/`: markdown translation, languages
+- `mcp/vercel/`: deployment trigger, status
+- `mcp/git/`: write, commit, push, sha
+- `mcp/orchestrator/`: run agents (ingest/collect/council/publish/i18n), health
+- `mcp/freepik/`: image search/details/download
+- `mcp/linkup/`: web search/fetch, GitHub search for architecture validation
+
+Handlers will be wired once API creds are provided.
+
+## Agents
+See `agents/README.md` for roles, inputs, and outputs.
+
+
+

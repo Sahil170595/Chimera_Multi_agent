@@ -1,13 +1,13 @@
 """Benchmark generation utilities for Muse Protocol."""
 
 import json
-import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 from schemas.benchmarks import (
-    BenchmarkType, BenchmarkResult, BenchmarkReport,
-    create_benchmark_template, PerformanceMetrics,
+    BenchmarkType,
+    BenchmarkResult,
+    create_benchmark_template,
     CompilationBenchmark, QuantizationBenchmark,
     KernelOptimizationBenchmark, AttentionBenchmark,
     PromptSuiteBenchmark, SystemPerformanceBenchmark,

@@ -413,3 +413,31 @@ ENV/
 # Ignore OS files
 .DS_Store
 Thumbs.db
+
+# --- Additional project-specific ignores (appended) ---
+# Secrets and credentials
+.env
+.env.*
+.envrc
+.git-credentials
+.netrc
+.npmrc
+.yarnrc
+.vercel/
+
+# Keys and certificates
+*.pem
+*.key
+*.crt
+*.cer
+*.der
+*.p12
+*.pfx
+
+# MCP local configs
+mcp.config.json
+.mcp.config.json
+
+# Generated translations and artifacts
+posts_i18n/
+artifacts/

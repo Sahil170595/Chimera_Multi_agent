@@ -324,4 +324,3 @@ Invalid next steps.
             assert "❌" in result.output  # Invalid episode
             assert "Series must be one of" in result.output
             assert "1 valid, 1 invalid" in result.output
-

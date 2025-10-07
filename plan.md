@@ -1,5 +1,37 @@
 # Chimera Muse: Final Bulletproof Architecture
 
+## 🚀 Evolution Path: Bulletproof → Self-Evolving
+
+### Phase 2: Self-Evolving Enhancements
+
+To elevate from bulletproof → self-evolving, bolt on these components:
+
+#### 🎛️ **Governor Micro-service**
+- **Purpose**: Reads ClickHouse trends → suggests new benchmark configs
+- **Architecture**: No local training, pure data-driven recommendations
+- **Function**: Analyzes performance patterns, suggests optimal benchmark parameters
+- **Integration**: Consumes ClickHouse analytics, outputs configuration updates
+
+#### 🧠 **Critic Agent** 
+- **Purpose**: Post-publish evaluation of episode clarity vs. data
+- **Function**: Analyzes published episodes against source data accuracy
+- **Output**: Updates council weighting based on content quality metrics
+- **Trigger**: Runs after each episode publication
+
+#### 📋 **Policy Registry**
+- **Storage**: YAML or SQL table defining "publish thresholds"
+- **Function**: Self-tuning thresholds based on historical metrics
+- **Scope**: Quality gates, performance baselines, content standards
+- **Evolution**: Automatically adjusts thresholds based on success patterns
+
+#### 🧮 **Embedding Cache**
+- **Purpose**: Store episode + benchmark embeddings for retrieval
+- **Function**: Enables contextual reasoning and similarity matching
+- **Use Cases**: Content recommendations, pattern detection, quality scoring
+- **Storage**: Vector database integration (Pinecone, Weaviate, or local)
+
+---
+
 ## 🎯 Core Principle
 **Every claim in an episode must be traceable to a ClickHouse row. Every ClickHouse row must be verifiable against a git commit. Every system failure must alert before it corrupts narrative.**
 
@@ -450,4 +482,5 @@ muse health                          # Check all components
 7. **Schema Versions**: Future-proofs against breaking changes
 
 This architecture treats **data quality as a first-class citizen**, not an afterthought. Ship it.
+
 

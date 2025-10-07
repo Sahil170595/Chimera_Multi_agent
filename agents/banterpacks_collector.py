@@ -5,7 +5,7 @@ import json
 import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List
 import subprocess
 from integrations.clickhouse_client import ClickHouseClient
 from integrations.datadog import DatadogClient
@@ -211,7 +211,7 @@ class BanterpacksCollector:
         # Mock overlay_open events
         for i in range(base_sessions):
             events.append({
-                "ts": commit_data["timestamp"] + timedelta(minutes=i*2),
+                "ts": commit_data["timestamp"] + timedelta(minutes=i * 2),
                 "session_id": str(uuid.uuid4()),
                 "commit_sha": commit_sha,
                 "event_type": "overlay_open",
@@ -224,7 +224,7 @@ class BanterpacksCollector:
         # Mock query_submit events (fewer than overlay_open)
         for i in range(base_sessions // 3):
             events.append({
-                "ts": commit_data["timestamp"] + timedelta(minutes=i*5),
+                "ts": commit_data["timestamp"] + timedelta(minutes=i * 5),
                 "session_id": str(uuid.uuid4()),
                 "commit_sha": commit_sha,
                 "event_type": "query_submit",
@@ -238,7 +238,7 @@ class BanterpacksCollector:
         if impact_score > 3:  # High-impact commits might have errors
             for i in range(max(1, impact_score // 3)):
                 events.append({
-                    "ts": commit_data["timestamp"] + timedelta(minutes=i*10),
+                    "ts": commit_data["timestamp"] + timedelta(minutes=i * 10),
                     "session_id": str(uuid.uuid4()),
                     "commit_sha": commit_sha,
                     "event_type": "error",
@@ -461,4 +461,3 @@ def run_banterpacks_collector():
 
 if __name__ == "__main__":
     run_banterpacks_collector()
-

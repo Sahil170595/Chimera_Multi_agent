@@ -1,7 +1,7 @@
 """ClickHouse integration for Muse Protocol."""
 
 import logging
-from typing import Dict, Any, Optional, List
+from typing import List, Optional
 from dataclasses import dataclass
 from clickhouse_driver import Client
 from apps.config import ClickHouseConfig
@@ -226,4 +226,3 @@ class MockClickHouseClient:
     def episode_exists(self, run_id: str) -> bool:
         """Mock episode existence check."""
         return any(ep.run_id == run_id for ep in self.episodes)
-

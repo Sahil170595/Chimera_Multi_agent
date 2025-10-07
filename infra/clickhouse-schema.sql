@@ -110,3 +110,5 @@ CREATE TABLE deployments (
 PARTITION BY toDate(ts)
 ORDER BY ts;
 
+
+

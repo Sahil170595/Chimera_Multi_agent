@@ -3,12 +3,11 @@
 import logging
 import json
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime
+from typing import Dict, Any, List, Tuple
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Tuple
 from integrations.clickhouse_client import ClickHouseClient
 from integrations.datadog import DatadogClient
-from integrations.deepl import DeepLClient
 
 logger = logging.getLogger(__name__)
 
@@ -146,9 +145,11 @@ class CouncilAgent:
             # Final confidence score
             confidence_score = min(completeness, correlation_strength, recency, data_quality)
 
-            logger.info(f"Confidence calculation: completeness={completeness:.2f}, "
-                       f"correlation={correlation_strength:.2f}, recency={recency:.2f}, "
-                       f"quality={data_quality:.2f} -> final={confidence_score:.2f}")
+            logger.info(
+                f"Confidence calculation: completeness={completeness:.2f}, "
+                f"correlation={correlation_strength:.2f}, recency={recency:.2f}, "
+                f"quality={data_quality:.2f} -> final={confidence_score:.2f}"
+            )
 
             return confidence_score, correlation_strength
 
@@ -172,9 +173,14 @@ class CouncilAgent:
         else:
             return "banterpacks"
 
-    def generate_episode_content(self, correlation_data: List[Dict[str, Any]],
-                               confidence_score: float, correlation_strength: float,
-                               hearts_commit: str, packs_commit: str) -> str:
+    def generate_episode_content(
+        self,
+        correlation_data: List[Dict[str, Any]],
+        confidence_score: float,
+        correlation_strength: float,
+        hearts_commit: str,
+        packs_commit: str,
+    ) -> str:
         """Generate episode content based on correlation data.
 
         Args:
@@ -499,4 +505,3 @@ def run_council_agent():
 
 if __name__ == "__main__":
     run_council_agent()
-

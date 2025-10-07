@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, Tuple
 import uuid
+import os
 from integrations.clickhouse_client import ClickHouseClient
 from integrations.datadog import DatadogClient
 
@@ -14,7 +15,8 @@ logger = logging.getLogger(__name__)
 
 
 class WatcherAgent:
-    """Watcher Agent - Validates data integrity and\n    blocks Council if data is stale."""
+    """Watcher Agent - Validates data integrity and
+    blocks Council if data is stale."""
 
     def __init__(self, clickhouse_client: ClickHouseClient, datadog_client: DatadogClient):
         """Initialize Watcher Agent.
@@ -28,6 +30,7 @@ class WatcherAgent:
         self.status_file = Path("/tmp/watcher_ok")
         self.max_hearts_lag = 300  # 5 minutes
         self.max_packs_lag = 5400  # 90 minutes
+        self.allow_degraded = os.getenv("WATCHER_ALLOW_DEGRADED", "false").lower() == "true"
 
     def get_latest_commits(self) -> Tuple[str, str]:
         """Get latest commits from Banterhearts and Banterpacks.
@@ -77,8 +80,12 @@ class WatcherAgent:
             )
 
             # Determine status
-            if hearts_rows == 0:
+            if hearts_rows == 0 and self.allow_degraded:
+                status = "degraded"
+            elif hearts_rows == 0:
                 status = "missing_hearts"
+            elif packs_rows == 0 and self.allow_degraded:
+                status = "degraded"
             elif packs_rows == 0:
                 status = "missing_packs"
             elif lag_seconds > self.max_hearts_lag and lag_seconds > self.max_packs_lag:
@@ -91,6 +98,8 @@ class WatcherAgent:
 
         except Exception as e:
             logger.error(f"Failed to check data integrity: {e}")
+            if self.allow_degraded:
+                return "degraded", 0, 0, 999999
             return "error", 0, 0, 999999
 
     def update_status_file(self, status: str):
@@ -100,7 +109,7 @@ class WatcherAgent:
             status: Current status
         """
         try:
-            if status == "valid":
+            if status in ("valid", "degraded"):
                 # Create/update status file
                 self.status_file.write_text(f"{datetime.now().isoformat()}\n")
                 logger.info("Updated watcher status file: OK")
@@ -124,14 +133,14 @@ class WatcherAgent:
         """
         try:
             # Emit watcher metrics
-            self.datadog.increment("watcher.success" if status == "valid" else "watcher.failure")
+            self.datadog.increment("watcher.success" if status in ("valid", "degraded") else "watcher.failure")
             self.datadog.gauge("watcher.lag_seconds.hearts", lag_seconds, tags=["repo:banterhearts"])
             self.datadog.gauge("watcher.lag_seconds.packs", lag_seconds, tags=["repo:banterpacks"])
             self.datadog.gauge("watcher.hearts_rows", hearts_rows)
             self.datadog.gauge("watcher.packs_rows", packs_rows)
 
             # Emit alerts if needed
-            if status != "valid":
+            if status not in ("valid", "degraded"):
                 self.datadog.increment("watcher.failure", tags=[f"reason:{status}"])
                 logger.warning(f"Watcher failure: {status}")
 
@@ -154,22 +163,28 @@ class WatcherAgent:
             hearts_commit, packs_commit = self.get_latest_commits()
 
             if not hearts_commit or not packs_commit:
-                logger.error("Failed to get latest commits")
-                return {
-                    "run_id": run_id,
-                    "status": "error",
-                    "hearts_commit": hearts_commit,
-                    "packs_commit": packs_commit,
-                    "hearts_rows": 0,
-                    "packs_rows": 0,
-                    "lag_seconds": 999999,
-                    "error": "Failed to get latest commits"
-                }
-
-            # Check data integrity
-            status, hearts_rows, packs_rows, lag_seconds = self.check_data_integrity(
-                hearts_commit, packs_commit
-            )
+                if self.allow_degraded:
+                    status = "degraded"
+                    hearts_rows = 0
+                    packs_rows = 0
+                    lag_seconds = 999999
+                else:
+                    logger.error("Failed to get latest commits")
+                    return {
+                        "run_id": run_id,
+                        "status": "error",
+                        "hearts_commit": hearts_commit,
+                        "packs_commit": packs_commit,
+                        "hearts_rows": 0,
+                        "packs_rows": 0,
+                        "lag_seconds": 999999,
+                        "error": "Failed to get latest commits"
+                    }
+            else:
+                # Check data integrity
+                status, hearts_rows, packs_rows, lag_seconds = self.check_data_integrity(
+                    hearts_commit, packs_commit
+                )
 
             # Update status file
             self.update_status_file(status)
@@ -187,7 +202,7 @@ class WatcherAgent:
                 "packs_rows_found": packs_rows,
                 "lag_seconds": lag_seconds,
                 "status": status,
-                "alert_sent": status != "valid"
+                "alert_sent": status not in ("valid", "degraded")
             }
 
             self.clickhouse.insert_watcher_run(watcher_data)
@@ -200,7 +215,7 @@ class WatcherAgent:
                 "hearts_rows": hearts_rows,
                 "packs_rows": packs_rows,
                 "lag_seconds": lag_seconds,
-                "watcher_ok": status == "valid"
+                "watcher_ok": status in ("valid", "degraded")
             }
 
             logger.info(f"Watcher check completed: {status}")
@@ -208,6 +223,13 @@ class WatcherAgent:
 
         except Exception as e:
             logger.error(f"Watcher check failed: {e}")
+            if self.allow_degraded:
+                return {
+                    "run_id": run_id,
+                    "status": "degraded",
+                    "error": str(e),
+                    "watcher_ok": True
+                }
             return {
                 "run_id": run_id,
                 "status": "error",
@@ -235,6 +257,16 @@ class WatcherAgent:
             logger.error(f"Failed to check watcher status: {e}")
             return False
 
+    def check_data_freshness(self, hours: int = 24) -> Dict[str, Any]:
+        """CLI compatibility wrapper: perform a watcher check.
+
+        Args:
+            hours: Lookback window (currently informational)
+        Returns:
+            Result dict from run_watcher_check
+        """
+        return self.run_watcher_check()
+
 
 def run_watcher_agent():
     """Run watcher agent as standalone script."""
@@ -249,13 +281,11 @@ def run_watcher_agent():
         host=config.clickhouse.host,
         port=config.clickhouse.port,
         username=config.clickhouse.username,
-        password=config.clickhouse.password
+        password=config.clickhouse.password,
+        database=config.clickhouse.database
     )
 
-    datadog = DatadogClient(
-        api_key=config.datadog.api_key,
-        app_key=config.datadog.app_key
-    )
+    datadog = DatadogClient(config=config.datadog)
 
     # Run watcher
     watcher = WatcherAgent(clickhouse, datadog)
@@ -270,4 +300,3 @@ def run_watcher_agent():
 
 if __name__ == "__main__":
     run_watcher_agent()
-

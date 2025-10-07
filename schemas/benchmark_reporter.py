@@ -364,7 +364,10 @@ class BenchmarkReporter:
                 "High memory usage detected - consider implementing memory optimization techniques"
             )
 
-        if system_perf.system_metrics.gpu_temperature_peak_c and\n    system_perf.system_metrics.gpu_temperature_peak_c > 80:
+        if (
+            system_perf.system_metrics.gpu_temperature_peak_c
+            and system_perf.system_metrics.gpu_temperature_peak_c > 80
+        ):
             recommendations.append(
                 "High GPU temperature detected - consider improving cooling or reducing GPU load"
             )
@@ -382,4 +385,3 @@ class BenchmarkReporter:
             recommendations.append("All benchmarks show good performance - continue current configuration")
 
         return recommendations
-

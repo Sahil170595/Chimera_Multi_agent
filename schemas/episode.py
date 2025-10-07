@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import List, Dict, Any, Optional, Tuple
 from pathlib import Path
 import yaml
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class EpisodeMetadata(BaseModel):
@@ -24,16 +24,18 @@ class EpisodeMetadata(BaseModel):
     cost_usd: float = Field(..., description="Cost in USD")
     benchmarks: Optional[Dict[str, Any]] = Field(default=None, description="Benchmark data")
 
-    @validator('series')
-    def validate_series(cls, v):
+    @field_validator('series')
+    @classmethod
+    def validate_series(cls, v: str) -> str:
         """Validate series name."""
         valid_series = ['Banterpacks', 'Chimera']
         if v not in valid_series:
             raise ValueError(f"Series must be one of {valid_series}, got: {v}")
         return v
 
-    @validator('run_id')
-    def validate_run_id(cls, v):
+    @field_validator('run_id')
+    @classmethod
+    def validate_run_id(cls, v: str) -> str:
         """Validate run_id is a valid UUID."""
         try:
             uuid.UUID(v)
@@ -41,8 +43,9 @@ class EpisodeMetadata(BaseModel):
             raise ValueError(f"run_id must be a valid UUID, got: {v}")
         return v
 
-    @validator('commit_sha')
-    def validate_commit_sha(cls, v):
+    @field_validator('commit_sha')
+    @classmethod
+    def validate_commit_sha(cls, v: str) -> str:
         """Validate commit SHA is 40 characters."""
         if len(v) != 40:
             raise ValueError(f"commit_sha must be 40 characters, got {len(v)}")
@@ -50,22 +53,25 @@ class EpisodeMetadata(BaseModel):
             raise ValueError("commit_sha must be hexadecimal")
         return v
 
-    @validator('episode')
-    def validate_episode(cls, v):
+    @field_validator('episode')
+    @classmethod
+    def validate_episode(cls, v: int) -> int:
         """Validate episode number is positive."""
         if v <= 0:
             raise ValueError(f"Episode number must be positive, got: {v}")
         return v
 
-    @validator('latency_ms_p95', 'tokens_in', 'tokens_out')
-    def validate_positive_numbers(cls, v):
+    @field_validator('latency_ms_p95', 'tokens_in', 'tokens_out')
+    @classmethod
+    def validate_positive_numbers(cls, v: int) -> int:
         """Validate numeric fields are non-negative."""
         if v < 0:
             raise ValueError(f"Value must be non-negative, got: {v}")
         return v
 
-    @validator('cost_usd')
-    def validate_cost(cls, v):
+    @field_validator('cost_usd')
+    @classmethod
+    def validate_cost(cls, v: float) -> float:
         """Validate cost is non-negative."""
         if v < 0:
             raise ValueError(f"Cost must be non-negative, got: {v}")

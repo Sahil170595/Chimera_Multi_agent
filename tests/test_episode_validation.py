@@ -314,4 +314,3 @@ Continue testing.
 
         assert is_valid
         assert len(errors) == 0
-

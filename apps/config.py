@@ -2,7 +2,7 @@
 
 import os
 from typing import Optional
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from dotenv import load_dotenv
 
 
@@ -13,6 +13,11 @@ class ClickHouseConfig(BaseModel):
     user: str = Field(..., description="ClickHouse username")
     password: str = Field(default="", description="ClickHouse password")
     database: str = Field(..., description="ClickHouse database name")
+
+    @property
+    def username(self) -> str:
+        """Compatibility alias for user."""
+        return self.user
 
 
 class DatadogConfig(BaseModel):
@@ -58,8 +63,9 @@ class Config(BaseModel):
     agent: AgentConfig
     logging: LoggingConfig
 
-    @validator('logging')
-    def validate_log_level(cls, v):
+    @field_validator('logging')
+    @classmethod
+    def validate_log_level(cls, v: LoggingConfig) -> LoggingConfig:
         """Validate log level."""
         valid_levels = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
         if v.level.upper() not in valid_levels:
@@ -145,4 +151,3 @@ def validate_required_env_vars() -> None:
             f"Missing required environment variables: {', '.join(missing_vars)}. "
             f"Please copy env.sample to .env and fill in the values."
         )
-

@@ -69,3 +69,5 @@ resource "datadog_monitor" "translation_failures" {
   tags = ["service:muse-protocol", "team:platform"]
 }
 
+
+

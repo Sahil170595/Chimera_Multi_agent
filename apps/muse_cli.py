@@ -3,9 +3,7 @@
 import logging
 import json
 import sys
-from datetime import datetime
-from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Optional
 import click
 from apps.config import load_config
 from integrations.clickhouse_client import ClickHouseClient
@@ -41,20 +39,18 @@ def watcher(hours: int):
             host=config.clickhouse.host,
             port=config.clickhouse.port,
             username=config.clickhouse.username,
-            password=config.clickhouse.password
+            password=config.clickhouse.password,
+            database=config.clickhouse.database
         )
 
-        datadog = DatadogClient(
-            api_key=config.datadog.api_key,
-            app_key=config.datadog.app_key
-        )
+        datadog = DatadogClient(config=config.datadog)
 
         watcher = WatcherAgent(clickhouse, datadog)
         result = watcher.check_data_freshness(hours)
 
         click.echo(json.dumps(result, indent=2, default=str))
 
-        if result.get("status") == "ok":
+        if result.get("watcher_ok"):
             click.echo("✅ Watcher status: OK", err=True)
             sys.exit(0)
         else:
@@ -77,13 +73,11 @@ def ingest(hours: int):
             host=config.clickhouse.host,
             port=config.clickhouse.port,
             username=config.clickhouse.username,
-            password=config.clickhouse.password
+            password=config.clickhouse.password,
+            database=config.clickhouse.database
         )
 
-        datadog = DatadogClient(
-            api_key=config.datadog.api_key,
-            app_key=config.datadog.app_key
-        )
+        datadog = DatadogClient(config=config.datadog)
 
         ingestor = BanterheartsIngestor(clickhouse, datadog)
         result = ingestor.ingest_benchmarks(hours)
@@ -113,13 +107,11 @@ def collect(hours: int):
             host=config.clickhouse.host,
             port=config.clickhouse.port,
             username=config.clickhouse.username,
-            password=config.clickhouse.password
+            password=config.clickhouse.password,
+            database=config.clickhouse.database
         )
 
-        datadog = DatadogClient(
-            api_key=config.datadog.api_key,
-            app_key=config.datadog.app_key
-        )
+        datadog = DatadogClient(config=config.datadog)
 
         collector = BanterpacksCollector(clickhouse, datadog)
         result = collector.run_collection(hours)
@@ -148,13 +140,11 @@ def council():
             host=config.clickhouse.host,
             port=config.clickhouse.port,
             username=config.clickhouse.username,
-            password=config.clickhouse.password
+            password=config.clickhouse.password,
+            database=config.clickhouse.database
         )
 
-        datadog = DatadogClient(
-            api_key=config.datadog.api_key,
-            app_key=config.datadog.app_key
-        )
+        datadog = DatadogClient(config=config.datadog)
 
         council = CouncilAgent(clickhouse, datadog)
         result = council.generate_episode()
@@ -184,13 +174,11 @@ def publish(episode: Optional[int]):
             host=config.clickhouse.host,
             port=config.clickhouse.port,
             username=config.clickhouse.username,
-            password=config.clickhouse.password
+            password=config.clickhouse.password,
+            database=config.clickhouse.database
         )
 
-        datadog = DatadogClient(
-            api_key=config.datadog.api_key,
-            app_key=config.datadog.app_key
-        )
+        datadog = DatadogClient(config=config.datadog)
 
         publisher = PublisherAgent(clickhouse, datadog)
         result = publisher.publish_episode(episode)
@@ -220,13 +208,11 @@ def translate(langs: Optional[str]):
             host=config.clickhouse.host,
             port=config.clickhouse.port,
             username=config.clickhouse.username,
-            password=config.clickhouse.password
+            password=config.clickhouse.password,
+            database=config.clickhouse.database
         )
 
-        datadog = DatadogClient(
-            api_key=config.datadog.api_key,
-            app_key=config.datadog.app_key
-        )
+        datadog = DatadogClient(config=config.datadog)
 
         translator = I18nTranslator(clickhouse, datadog)
 
@@ -260,13 +246,11 @@ def pipeline():
             host=config.clickhouse.host,
             port=config.clickhouse.port,
             username=config.clickhouse.username,
-            password=config.clickhouse.password
+            password=config.clickhouse.password,
+            database=config.clickhouse.database
         )
 
-        datadog = DatadogClient(
-            api_key=config.datadog.api_key,
-            app_key=config.datadog.app_key
-        )
+        datadog = DatadogClient(config=config.datadog)
 
         # Initialize all agents
         watcher = WatcherAgent(clickhouse, datadog)
@@ -283,7 +267,7 @@ def pipeline():
         watcher_result = watcher.check_data_freshness(24)
         pipeline_results["watcher"] = watcher_result
 
-        if watcher_result.get("status") != "ok":
+        if not watcher_result.get("watcher_ok"):
             click.echo("❌ Pipeline stopped: Watcher failed", err=True)
             click.echo(json.dumps(pipeline_results, indent=2, default=str))
             sys.exit(1)
@@ -344,7 +328,8 @@ def status():
             host=config.clickhouse.host,
             port=config.clickhouse.port,
             username=config.clickhouse.username,
-            password=config.clickhouse.password
+            password=config.clickhouse.password,
+            database=config.clickhouse.database
         )
 
         # Check ClickHouse connection
@@ -395,4 +380,3 @@ def status():
 
 if __name__ == "__main__":
     cli()
-

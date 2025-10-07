@@ -2,9 +2,8 @@
 
 import logging
 import json
-from datetime import datetime, timedelta
-from typing import Dict, Any, List, Optional
-from datadog import initialize, api
+from typing import Dict, Any
+from datadog import initialize
 from datadog.api import monitors, dashboards, events
 
 logger = logging.getLogger(__name__)
@@ -473,4 +472,3 @@ def setup_datadog_monitoring():
 
 if __name__ == "__main__":
     setup_datadog_monitoring()
-

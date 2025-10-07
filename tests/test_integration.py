@@ -4,8 +4,6 @@ import logging
 import json
 import sys
 import time
-from datetime import datetime
-from pathlib import Path
 from typing import Dict, Any
 from apps.config import load_config
 from integrations.clickhouse_client import ClickHouseClient
@@ -328,4 +326,3 @@ def run_integration_tests():
 
 if __name__ == "__main__":
     run_integration_tests()
-
