@@ -49,6 +49,7 @@ jobs:
           pip install -e .
           pip install pytest pytest-cov pytest-mock
           pip install opentelemetry-api opentelemetry-sdk opentelemetry-exporter-otlp-proto-grpc opentelemetry-instrumentation-requests opentelemetry-instrumentation-fastapi
+          pip install tenacity clickhouse-driver datadog-api-client
 
       - name: Run tests
         run: pytest tests/ --cov=apps --cov=agents --cov=integrations --cov-report=xml --cov-report=term
