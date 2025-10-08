@@ -115,7 +115,7 @@ def new(ctx, series, sql):
         # Send metrics to Datadog
         datadog.send_episode_metrics(metadata)
 
-        click.echo(f"✅ Created {series} episode {metadata['episode']}: {episode_file}")
+        click.echo(f"[OK] Created {series} episode {metadata['episode']}: {episode_file}")
 
     except Exception as e:
         logger.error(f"Failed to create episode: {e}")
@@ -183,7 +183,7 @@ def sync(ctx, langs, series):
 
                 # Translate
                 if deepl.translate_markdown(src_file, lang, out_file):
-                    click.echo(f"  ✅ Translated to {lang}")
+                    click.echo(f"  [OK] Translated to {lang}")
 
                     # Log translation to ClickHouse
                     translation_record = TranslationRecord(
@@ -202,9 +202,9 @@ def sync(ctx, langs, series):
                         "target_language": lang
                     })
                 else:
-                    click.echo(f"  ❌ Failed to translate to {lang}")
+                    click.echo(f"  [FAIL] Failed to translate to {lang}")
 
-        click.echo("✅ Translation sync completed")
+        click.echo("[OK] Translation sync completed")
 
     except Exception as e:
         logger.error(f"Failed to sync translations: {e}")
@@ -235,10 +235,10 @@ def check(ctx):
 
         for file_path, (is_valid, errors, warnings) in results.items():
             if is_valid:
-                click.echo(f"✅ {file_path}")
+                click.echo(f"[OK] {file_path}")
                 valid_count += 1
             else:
-                click.echo(f"❌ {file_path}")
+                click.echo(f"[FAIL] {file_path}")
                 invalid_count += 1
 
                 for error in errors:

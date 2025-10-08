@@ -2,6 +2,7 @@
 
 import logging
 import json
+import os
 import uuid
 from datetime import datetime
 from typing import Dict, Any, List, Tuple
@@ -24,7 +25,9 @@ class CouncilAgent:
         """
         self.clickhouse = clickhouse_client
         self.datadog = datadog_client
-        self.status_file = Path("/tmp/watcher_ok")
+        # Use same temp directory logic as watcher
+        tmp_dir = Path(os.getenv('TEMP', '/tmp'))
+        self.status_file = tmp_dir / "watcher_ok"
 
     def check_watcher_status(self) -> bool:
         """Check if watcher status is OK.

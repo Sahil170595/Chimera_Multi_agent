@@ -19,6 +19,7 @@ except Exception:
     _DD_AVAILABLE = False
 
 from apps.config import DatadogConfig
+from integrations.retry_utils import datadog_retry
 
 
 logger = logging.getLogger(__name__)
@@ -84,6 +85,7 @@ class DatadogClient:
             return tags
         return [f"{k}:{v}" for k, v in tags.items()]
 
+    @datadog_retry
     def send_metric(self, name: str, value: float, tags: Optional[Union[Dict[str, str], List[str]]] = None) -> None:
         """Send metric to Datadog.
 

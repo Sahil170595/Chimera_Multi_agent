@@ -8,6 +8,7 @@ import click
 from apps.config import load_config
 from integrations.clickhouse_client import ClickHouseClient
 from integrations.datadog import DatadogClient
+from integrations.mcp_client import create_mcp_clients
 from agents.watcher import WatcherAgent
 from agents.banterhearts_ingestor import BanterheartsIngestor
 from agents.banterpacks_collector import BanterpacksCollector
@@ -180,7 +181,15 @@ def publish(episode: Optional[int]):
 
         datadog = DatadogClient(config=config.datadog)
 
-        publisher = PublisherAgent(clickhouse, datadog)
+        # Initialize MCP clients
+        mcp_clients = create_mcp_clients(config)
+
+        publisher = PublisherAgent(
+            clickhouse,
+            datadog,
+            git_client=mcp_clients.get("git"),
+            vercel_client=mcp_clients.get("vercel")
+        )
         result = publisher.publish_episode(episode)
 
         click.echo(json.dumps(result, indent=2, default=str))
@@ -214,7 +223,14 @@ def translate(langs: Optional[str]):
 
         datadog = DatadogClient(config=config.datadog)
 
-        translator = I18nTranslator(clickhouse, datadog)
+        # Initialize MCP clients
+        mcp_clients = create_mcp_clients(config)
+
+        translator = I18nTranslator(
+            clickhouse,
+            datadog,
+            deepl_client=mcp_clients.get("deepl")
+        )
 
         languages = None
         if langs:

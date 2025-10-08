@@ -11,5 +11,3 @@ Purpose: web search and URL fetch to validate our architecture uses current best
 - LINKUP_SEARCH_KEY (optional, if using a search API)
 - GITHUB_TOKEN (optional, for GitHub rate limits)
 
-## Status
-- Tool schemas present. Handlers will be wired once keys are provided.

@@ -9,6 +9,7 @@ from typing import Dict, Any, Optional, Tuple
 import subprocess
 from integrations.clickhouse_client import ClickHouseClient
 from integrations.datadog import DatadogClient
+from integrations.mcp_client import GitClient, VercelClient
 
 logger = logging.getLogger(__name__)
 
@@ -16,17 +17,26 @@ logger = logging.getLogger(__name__)
 class PublisherAgent:
     """Publisher Agent - Publishes episodes to Banterblogs with Vercel deployment."""
 
-    def __init__(self, clickhouse_client: ClickHouseClient, datadog_client: DatadogClient):
+    def __init__(
+            self,
+            clickhouse_client: ClickHouseClient,
+            datadog_client: DatadogClient,
+            git_client: Optional[GitClient] = None,
+            vercel_client: Optional[VercelClient] = None):
         """Initialize Publisher Agent.
 
         Args:
             clickhouse_client: ClickHouse client instance
             datadog_client: Datadog client instance
+            git_client: Git MCP client (optional)
+            vercel_client: Vercel MCP client (optional)
         """
         self.clickhouse = clickhouse_client
         self.datadog = datadog_client
+        self.git = git_client
+        self.vercel = vercel_client
         self.banterblogs_dir = Path("../Banterblogs")
-        self.vercel_token = ""  # Will be loaded from config
+        self.vercel_token = ""  # Fallback if no MCP client
 
     def get_episode_to_publish(self, episode_num: Optional[int] = None) -> Optional[Dict[str, Any]]:
         """Get episode to publish.
@@ -173,6 +183,14 @@ class PublisherAgent:
             True if successful
         """
         try:
+            # Use MCP client if available
+            if self.git:
+                success = self.git.push("main")
+                if success:
+                    logger.info("Successfully pushed to GitHub via MCP")
+                return success
+
+            # Fallback to subprocess
             cwd = self.banterblogs_dir
 
             result = subprocess.run(
@@ -200,11 +218,19 @@ class PublisherAgent:
             Deployment ID or None
         """
         try:
-            # This would require Vercel API integration
-            # For now, return a mock deployment ID
-            deployment_id = f"vercel_{uuid.uuid4().hex[:12]}"
+            # Use MCP client if available
+            if self.vercel:
+                result = self.vercel.trigger_deploy(
+                    project="banterblogs",
+                    git_ref="main"
+                )
+                deployment_id = result.get("deployment_id")
+                logger.info(f"Triggered Vercel deployment via MCP: {deployment_id}")
+                return deployment_id
 
-            logger.info(f"Triggered Vercel deployment: {deployment_id}")
+            # Fallback to mock
+            deployment_id = f"vercel_{uuid.uuid4().hex[:12]}"
+            logger.info(f"Triggered Vercel deployment (mock): {deployment_id}")
             return deployment_id
 
         except Exception as e:

@@ -437,13 +437,11 @@ def run_banterpacks_collector():
         host=config.clickhouse.host,
         port=config.clickhouse.port,
         username=config.clickhouse.username,
-        password=config.clickhouse.password
+        password=config.clickhouse.password,
+        database=config.clickhouse.database
     )
 
-    datadog = DatadogClient(
-        api_key=config.datadog.api_key,
-        app_key=config.datadog.app_key
-    )
+    datadog = DatadogClient(config=config.datadog)
 
     # Run collection
     collector = BanterpacksCollector(clickhouse, datadog)

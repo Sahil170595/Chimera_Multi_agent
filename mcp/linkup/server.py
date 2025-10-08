@@ -4,6 +4,7 @@ Purpose: enable models to query the web (search + fetch) to validate that our
 architecture references current best practices, libraries, and standards.
 """
 
+import os
 from typing import Dict, Any, List
 
 
@@ -55,4 +56,11 @@ def list_tools() -> List[Dict[str, Any]]:
 
 
 def ready() -> bool:
+    """Check if the server is ready to handle requests.
+
+    For this server, readiness depends on the presence of a GitHub token,
+    which is required for the 'github.search' tool.
+    """
+    if "github.search" in [tool["name"] for tool in list_tools()]:
+        return "GITHUB_TOKEN" in os.environ
     return True

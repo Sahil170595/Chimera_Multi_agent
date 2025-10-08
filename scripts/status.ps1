@@ -1,12 +1,17 @@
 param(
     [string]$EnvFile = "env.local",
-    [switch]$RunTests
+    [switch]$RunTests,
+    [switch]$Degraded
 )
 
 Write-Host "== Muse Protocol Status =="
 
 # Load env
 . "$PSScriptRoot\load-env.ps1" -EnvFile $EnvFile
+
+if ($Degraded) {
+  $env:WATCHER_ALLOW_DEGRADED = 'true'
+}
 
 # Helper to run Python in venv
 $py = Join-Path $PSScriptRoot "..\.venv\Scripts\python.exe"
@@ -19,7 +24,7 @@ function Run-Py {
 
 # ClickHouse check
 Write-Host "-- ClickHouse: checking..."
-$chCode = @"
+$chCode = @'
 import os
 try:
     import clickhouse_connect
@@ -32,24 +37,26 @@ try:
         secure=str(os.getenv('CLICKHOUSE_SECURE','false')).lower()=='true',
         verify=str(os.getenv('CLICKHOUSE_VERIFY','true')).lower()=='true',
     )
-    client.query('SELECT 1')
-    print('OK')
+    db = client.query('SELECT currentDatabase()').result_rows[0][0]
+    has_bench = client.query("SELECT count() FROM system.tables WHERE database=currentDatabase() AND name='bench_runs'").result_rows[0][0]
+    has_watch = client.query("SELECT count() FROM system.tables WHERE database=currentDatabase() AND name='watcher_runs'").result_rows[0][0]
+    print(f'OK (db={db}, bench_runs={bool(has_bench)}, watcher_runs={bool(has_watch)})')
 except Exception as e:
     print(f'ERROR: {e}')
-"@
+'@
 $chOut = Run-Py $chCode
 $chOutTrim = $chOut.Trim()
 Write-Host "ClickHouse: $chOutTrim"
 
 # Datadog check
 Write-Host "-- Datadog: checking..."
-$ddCode = @"
+$ddCode = @'
 from apps.config import load_config
 from integrations.datadog import DatadogClient
 cfg = load_config()
 cli = DatadogClient(cfg.datadog)
 print('OK' if cli.ready() else 'ERROR')
-"@
+'@
 $ddOut = Run-Py $ddCode
 Write-Host "Datadog: $($ddOut.Trim())"
 

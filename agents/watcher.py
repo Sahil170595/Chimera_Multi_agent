@@ -8,8 +8,10 @@ from pathlib import Path
 from typing import Dict, Any, Tuple
 import uuid
 import os
+import tempfile
 from integrations.clickhouse_client import ClickHouseClient
 from integrations.datadog import DatadogClient
+from integrations.tracing import trace_operation
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +29,8 @@ class WatcherAgent:
         """
         self.clickhouse = clickhouse_client
         self.datadog = datadog_client
-        self.status_file = Path("/tmp/watcher_ok")
+        tmp_dir = Path(tempfile.gettempdir())
+        self.status_file = tmp_dir / "watcher_ok"
         self.max_hearts_lag = 300  # 5 minutes
         self.max_packs_lag = 5400  # 90 minutes
         self.allow_degraded = os.getenv("WATCHER_ALLOW_DEGRADED", "false").lower() == "true"
@@ -74,33 +77,37 @@ class WatcherAgent:
         Returns:
             Tuple of (status, hearts_rows, packs_rows, lag_seconds)
         """
-        try:
-            hearts_rows, packs_rows, lag_seconds = self.clickhouse.check_data_freshness(
-                hearts_commit, packs_commit
-            )
+        with trace_operation("watcher.check_data_integrity", {
+            "hearts_commit": hearts_commit[:8],
+            "packs_commit": packs_commit[:8]
+        }):
+            try:
+                hearts_rows, packs_rows, lag_seconds = self.clickhouse.check_data_freshness(
+                    hearts_commit, packs_commit
+                )
 
-            # Determine status
-            if hearts_rows == 0 and self.allow_degraded:
-                status = "degraded"
-            elif hearts_rows == 0:
-                status = "missing_hearts"
-            elif packs_rows == 0 and self.allow_degraded:
-                status = "degraded"
-            elif packs_rows == 0:
-                status = "missing_packs"
-            elif lag_seconds > self.max_hearts_lag and lag_seconds > self.max_packs_lag:
-                status = "lag_exceeded"
-            else:
-                status = "valid"
+                # Determine status
+                if hearts_rows == 0 and self.allow_degraded:
+                    status = "degraded"
+                elif hearts_rows == 0:
+                    status = "missing_hearts"
+                elif packs_rows == 0 and self.allow_degraded:
+                    status = "degraded"
+                elif packs_rows == 0:
+                    status = "missing_packs"
+                elif lag_seconds > self.max_hearts_lag and lag_seconds > self.max_packs_lag:
+                    status = "lag_exceeded"
+                else:
+                    status = "valid"
 
-            logger.info(f"Data integrity check: {status} (hearts: {hearts_rows}, packs: {packs_rows}, lag: {lag_seconds}s)")
-            return status, hearts_rows, packs_rows, lag_seconds
+                logger.info(f"Data integrity check: {status} (hearts: {hearts_rows}, packs: {packs_rows}, lag: {lag_seconds}s)")
+                return status, hearts_rows, packs_rows, lag_seconds
 
-        except Exception as e:
-            logger.error(f"Failed to check data integrity: {e}")
-            if self.allow_degraded:
-                return "degraded", 0, 0, 999999
-            return "error", 0, 0, 999999
+            except Exception as e:
+                logger.error(f"Failed to check data integrity: {e}")
+                if self.allow_degraded:
+                    return "degraded", 0, 0, 999999
+                return "error", 0, 0, 999999
 
     def update_status_file(self, status: str):
         """Update watcher status file.
@@ -224,12 +231,14 @@ class WatcherAgent:
         except Exception as e:
             logger.error(f"Watcher check failed: {e}")
             if self.allow_degraded:
+                self.update_status_file("degraded")
                 return {
                     "run_id": run_id,
                     "status": "degraded",
                     "error": str(e),
                     "watcher_ok": True
                 }
+            self.update_status_file("error")
             return {
                 "run_id": run_id,
                 "status": "error",

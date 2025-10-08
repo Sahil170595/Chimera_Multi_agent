@@ -13,5 +13,3 @@ Purpose: expose agent orchestration to models via MCP (stdio) using the FastAPI 
 ## Config (env)
 - ORCH_URL (if calling HTTP), else local stdio wiring
 
-## Status
-- Tool schemas present. Handlers will be wired to FastAPI endpoints.

@@ -10,6 +10,3 @@ Purpose: expose basic git operations to models via MCP (stdio).
 
 ## Auth
 - Uses local git config / environment. No secrets stored in code.
-
-## Status
-- Tool schemas present. Handlers will be wired once repository permissions are granted.

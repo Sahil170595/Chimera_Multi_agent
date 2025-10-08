@@ -1,6 +1,6 @@
-# Contributing to Muse Protocol
+# Contributing to Chimera Multi-agent
 
-Thank you for your interest in contributing to Muse Protocol! This document provides guidelines and information for contributors.
+Thank you for your interest in contributing to Chimera Multi-agent! This document provides guidelines and information for contributors.
 
 ## 🚀 Getting Started
 
@@ -13,8 +13,8 @@ Thank you for your interest in contributing to Muse Protocol! This document prov
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-org/muse-protocol.git
-   cd muse-protocol
+   git clone https://github.com/your-org/Chimera_Multi_agent.git
+   cd Chimera_Multi_agent
    ```
 
 2. **Set up development environment**
@@ -132,7 +132,7 @@ make docker-down  # Stop all services
 
 ## 📊 Benchmarking
 
-Muse Protocol includes comprehensive benchmarking capabilities:
+Chimera Multi-agent includes comprehensive benchmarking capabilities:
 
 ### Benchmark Types
 - **Compilation Benchmarks**: Eager, JIT, Torch Compile, ONNX

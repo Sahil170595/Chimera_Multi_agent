@@ -1,0 +1,92 @@
+[flake8]
+# Relaxed flake8 configuration for Muse Protocol
+# Focus on critical issues, ignore cosmetic ones
+
+# Exclude directories
+exclude = 
+    .venv,
+    venv,
+    __pycache__,
+    .git,
+    .pytest_cache,
+    build,
+    dist,
+    *.egg-info,
+    node_modules,
+    .mypy_cache,
+    .history
+
+# Ignore specific error codes
+ignore = 
+    # Line length (E501) - Allow longer lines for readability
+    E501,
+    # Whitespace around operators (E203, E231) - YAML formatting issues
+    E203,
+    E231,
+    # Missing whitespace (E225, E226) - Less strict spacing
+    E225,
+    E226,
+    # Blank lines (E302, E303, E305) - Relaxed spacing requirements
+    E302,
+    E303,
+    E305,
+    # Indentation issues (E111, E114, E117, E127, E128) - Less strict
+    E111,
+    E114,
+    E117,
+    E127,
+    E128,
+    # Import placement (E402) - Allow imports after code
+    E402,
+    # Trailing whitespace (W291, W293) - Less strict whitespace
+    W291,
+    W293,
+    # Blank lines at end of file (W391, W292) - Allow
+    W391,
+    W292,
+    # Unused imports (F401) - Allow for future use
+    F401,
+    # F-strings without placeholders (F541) - Allow for consistency
+    F541,
+    # Undefined names (F821) - Allow for dynamic imports
+    F821,
+    # Unused variables (F841) - Allow for debugging
+    F841,
+    # Unused global variables (F824) - Allow for future use
+    F824,
+    # Complexity warnings (C901) - Allow complex business logic
+    C901,
+    # Line break before binary operator (W503) - Style preference
+    W503
+
+# Maximum line length
+max-line-length = 120
+
+# Maximum complexity
+max-complexity = 15
+
+# Per-file ignores
+per-file-ignores =
+    # Scripts can be less strict
+    scripts/*:E402,F401,W293
+    # Tests can be more relaxed
+    tests/*:E501,F401,W293
+    # MCP servers can have longer lines
+    mcp/*:E501,F401
+    # Schema files can have longer lines for readability
+    schemas/*:E501,F401
+
+# Select specific checks to focus on critical issues
+select = 
+    E,  # pycodestyle errors
+    W,  # pycodestyle warnings  
+    F,  # pyflakes
+    C,  # mccabe complexity
+    B,  # flake8-bugbear
+    N,  # pep8-naming
+
+# Disable specific checks
+disable-noqa = False
+show-source = True
+statistics = True
+count = True

@@ -8,7 +8,8 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional
 from integrations.clickhouse_client import ClickHouseClient
 from integrations.datadog import DatadogClient
-from integrations.deepl import DeepLClient
+from integrations.deepl import DeepLClient as LegacyDeepLClient
+from integrations.mcp_client import DeepLClient as MCPDeepLClient
 
 logger = logging.getLogger(__name__)
 
@@ -16,16 +17,22 @@ logger = logging.getLogger(__name__)
 class I18nTranslator:
     """i18n Translator Agent - Translates episodes to multiple languages."""
 
-    def __init__(self, clickhouse_client: ClickHouseClient, datadog_client: DatadogClient):
+    def __init__(
+            self,
+            clickhouse_client: ClickHouseClient,
+            datadog_client: DatadogClient,
+            deepl_client: Optional[MCPDeepLClient] = None):
         """Initialize i18n Translator.
 
         Args:
             clickhouse_client: ClickHouse client instance
             datadog_client: Datadog client instance
+            deepl_client: DeepL MCP client (optional)
         """
         self.clickhouse = clickhouse_client
         self.datadog = datadog_client
-        self.deepl = DeepLClient()  # Will be initialized with API key
+        self.deepl_mcp = deepl_client
+        self.deepl_legacy = LegacyDeepLClient() if not deepl_client else None
         self.banterblogs_dir = Path("../Banterblogs")
         self.supported_languages = ["de", "zh", "hi"]
 

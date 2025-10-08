@@ -1,0 +1,83 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - 'v*'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/orchestrator
+
+jobs:
+  deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: infra/Dockerfile.orchestrator
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deploy to Cloud Run (if configured)
+        if: ${{ secrets.GCP_PROJECT_ID != '' }}
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: muse-orchestrator
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          region: us-central1
+          env_vars: |
+            DD_API_KEY=${{ secrets.DD_API_KEY }}
+            DD_APP_KEY=${{ secrets.DD_APP_KEY }}
+            CH_HOST=${{ secrets.CH_HOST }}
+            CH_PORT=${{ secrets.CH_PORT }}
+            CH_USER=${{ secrets.CH_USER }}
+            CH_PASSWORD=${{ secrets.CH_PASSWORD }}
+            CH_DATABASE=${{ secrets.CH_DATABASE }}
+
+      - name: Notify Datadog of deployment
+        run: |
+          curl -X POST "https://api.datadoghq.com/api/v1/events" \
+            -H "Content-Type: application/json" \
+            -H "DD-API-KEY: ${{ secrets.DD_API_KEY }}" \
+            -d '{
+              "title": "Muse Orchestrator Deployed",
+              "text": "Version ${{ github.sha }} deployed to production",
+              "tags": ["service:muse", "env:production", "version:${{ github.sha }}"],
+              "alert_type": "info"
+            }'

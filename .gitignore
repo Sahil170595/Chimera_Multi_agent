@@ -229,193 +229,12 @@ $RECYCLE.BIN/
 .Trash-*
 .nfs*
 
-# Project-specific files
-# Environment files
+# --- Muse Protocol Specific Ignores ---
+
+# Environment files and secrets
 env.local
 .env.local
 .env.*.local
-
-# Logs
-*.log
-logs/
-
-# Database files
-*.db
-*.sqlite
-*.sqlite3
-
-# Temporary files
-tmp/
-temp/
-.tmp/
-
-# IDE and editor files
-.idea/
-*.iml
-*.ipr
-*.iws
-.vscode/
-*.code-workspace
-*.sublime-project
-*.sublime-workspace
-
-# History files (backup files created by editors)
-.history/
-
-# Reports and generated files
-reports/*.json
-reports/*.csv
-reports/*.xlsx
-reports/*.pdf
-!reports/README.md
-
-# Docker
-.dockerignore
-docker-compose.override.yml
-
-# Terraform
-*.tfstate
-*.tfstate.*
-.terraform/
-.terraform.lock.hcl
-*.tfplan
-
-# Node.js (if any frontend components)
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Backup files
-*.backup
-*.bak
-*.orig
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# JetBrains IDEs
-.idea/
-*.iml
-*.ipr
-*.iws
-
-# Local configuration files
-config.local.py
-settings.local.py
-local_settings.py
-
-# Test coverage
-htmlcov/
-.coverage
-.coverage.*
-coverage.xml
-*.cover
-.pytest_cache/
-
-# Profiling
-*.prof
-*.lprof
-
-# Jupyter Notebook checkpoints
-.ipynb_checkpoints/
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-.python-version
-
-# pipenv
-Pipfile.lock
-
-# Poetry
-poetry.lock
-
-# PDM
-pdm.lock
-.pdm.toml
-
-# Celery
-celerybeat-schedule
-celerybeat.pid
-
-# SageMath
-*.sage.py
-
-# Spyder
-.spyderproject
-.spyproject
-
-# Rope
-.ropeproject
-
-# mkdocs
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre
-.pyre/
-
-# pytype
-.pytype/
-
-# Cython
-cython_debug/
-
-# Project specific
-# Keep important config files but ignore sensitive ones
-!env.sample
-!pyproject.toml
-!Makefile
-!README.md
-!plan.md
-
-# Ignore large data files
-*.csv
-*.json
-!schemas/*.json
-!tests/*.json
-!reports/test_*.json
-
-# Ignore compiled Python files
-*.pyc
-*.pyo
-*.pyd
-__pycache__/
-*.so
-
-# Ignore virtual environments
-venv/
-env/
-ENV/
-.venv/
-.env/
-
-# Ignore IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# Ignore OS files
-.DS_Store
-Thumbs.db
-
-# --- Additional project-specific ignores (appended) ---
-# Secrets and credentials
 .env
 .env.*
 .envrc
@@ -423,9 +242,8 @@ Thumbs.db
 .netrc
 .npmrc
 .yarnrc
-.vercel/
 
-# Keys and certificates
+# API keys and credentials
 *.pem
 *.key
 *.crt
@@ -433,11 +251,145 @@ Thumbs.db
 *.der
 *.p12
 *.pfx
+secrets/
+credentials/
 
-# MCP local configs
-mcp.config.json
-.mcp.config.json
+# Vercel deployment files
+.vercel/
+vercel.json.local
 
-# Generated translations and artifacts
+# Dead Letter Queue
+dlq/
+dead_letter_queue/
+
+# Generated content and translations
 posts_i18n/
 artifacts/
+generated/
+output/
+
+# MCP local configurations
+mcp.config.json
+.mcp.config.json
+mcp_local/
+
+# Agent status files
+watcher_ok
+agent_status/
+status/
+
+# Logs and debugging
+*.log
+logs/
+debug/
+agent_logs/
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+.temp/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+*.sql
+
+# Reports and generated files
+reports/*.json
+reports/*.csv
+reports/*.xlsx
+reports/*.pdf
+reports/*.html
+!reports/README.md
+!reports/test_*.json
+
+# Docker overrides
+docker-compose.override.yml
+.dockerignore.local
+
+# Terraform state
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+*.tfplan
+terraform.tfvars
+
+# Node.js dependencies (if any frontend)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json.local
+
+# Backup files
+*.backup
+*.bak
+*.orig
+*.old
+
+# Local configuration files
+config.local.py
+settings.local.py
+local_settings.py
+local_config.json
+
+# Test artifacts
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.pytest_cache/
+test_results/
+test_output/
+
+# Profiling data
+*.prof
+*.lprof
+profile_data/
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+notebooks/.ipynb_checkpoints/
+
+# History files
+.history/
+.vscode/settings.json.local
+
+# Keep important project files
+!env.sample
+!pyproject.toml
+!Makefile
+!README.md
+!plan.md
+!docs/
+!schemas/
+!tests/
+!scripts/
+
+# Ignore large data files but keep schemas
+*.csv
+*.json
+!schemas/*.json
+!tests/*.json
+!reports/test_*.json
+!docs/*.json
+
+# Performance and monitoring data
+performance_data/
+monitoring/
+metrics/
+traces/
+
+# Agent execution artifacts
+agent_output/
+episode_drafts/
+content_cache/
+
+# External service configs
+.datadog/
+.clickhouse/
+.github/workflows/local/

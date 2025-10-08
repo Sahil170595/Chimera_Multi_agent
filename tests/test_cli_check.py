@@ -84,7 +84,7 @@ Continue testing.
             result = runner.invoke(cli, ['check'])
 
             assert result.exit_code == 0
-            assert "✅" in result.output
+            assert "[OK]" in result.output
             assert "1 valid, 0 invalid" in result.output
 
     def test_check_invalid_episode(self, tmp_path):
@@ -129,7 +129,7 @@ Missing required sections!
             result = runner.invoke(cli, ['check'])
 
             assert result.exit_code == 1
-            assert "❌" in result.output
+            assert "[FAIL]" in result.output
             assert "Missing required sections" in result.output
             assert "0 valid, 1 invalid" in result.output
 
@@ -226,7 +226,7 @@ Banterpacks next steps.
             result = runner.invoke(cli, ['check'])
 
             assert result.exit_code == 0
-            assert "✅" in result.output
+            assert "[OK]" in result.output
             assert "2 valid, 0 invalid" in result.output
 
     def test_check_mixed_validity(self, tmp_path):
@@ -320,7 +320,7 @@ Invalid next steps.
             result = runner.invoke(cli, ['check'])
 
             assert result.exit_code == 1
-            assert "✅" in result.output  # Valid episode
-            assert "❌" in result.output  # Invalid episode
+            assert "[OK]" in result.output  # Valid episode
+            assert "[FAIL]" in result.output  # Invalid episode
             assert "Series must be one of" in result.output
             assert "1 valid, 1 invalid" in result.output

@@ -102,7 +102,13 @@ async def startup_event():
 
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
-    """Health check endpoint with dependency status."""
+    """Liveness probe - lightweight health check."""
+    return HealthResponse(status="healthy", dependencies={})
+
+
+@app.get("/ready", response_model=HealthResponse)
+async def readiness_check():
+    """Readiness probe - validates all dependencies."""
     dependencies = {}
 
     # Check ClickHouse
@@ -128,6 +134,12 @@ async def health_check():
         dependencies["repository"] = repo_writer.ready()
     else:
         dependencies["repository"] = False
+
+    # Check watcher status
+    import tempfile
+    from pathlib import Path
+    watcher_ok_file = Path(tempfile.gettempdir()) / "watcher_ok"
+    dependencies["watcher"] = watcher_ok_file.exists()
 
     # Overall status
     all_ready = all(dependencies.values())

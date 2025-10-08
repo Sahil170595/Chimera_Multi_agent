@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  orchestrator:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.orchestrator
+    image: muse-orchestrator:latest
+    container_name: muse-orchestrator
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - CH_HOST=${CH_HOST}
+      - CH_PORT=${CH_PORT}
+      - CH_USER=${CH_USER}
+      - CH_PASSWORD=${CH_PASSWORD}
+      - CH_DATABASE=${CH_DATABASE}
+      - DD_API_KEY=${DD_API_KEY}
+      - DD_APP_KEY=${DD_APP_KEY}
+      - DD_SITE=${DD_SITE:-datadoghq.com}
+      - DEEPL_API_KEY=${DEEPL_API_KEY}
+      - VERCEL_TOKEN=${VERCEL_TOKEN}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - LINKUP_API_KEY=${LINKUP_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - BANTERBLOGS_REPO=${BANTERBLOGS_REPO}
+      - WATCHER_ALLOW_DEGRADED=${WATCHER_ALLOW_DEGRADED:-false}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT}
+    volumes:
+      - ./posts:/app/posts
+      - ./posts_i18n:/app/posts_i18n
+      - ./reports:/app/reports
+      - ./dlq:/app/dlq
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - muse-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  muse-network:
+    driver: bridge

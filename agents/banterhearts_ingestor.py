@@ -421,10 +421,7 @@ def run_banterhearts_ingestor():
         database=config.clickhouse.database
     )
 
-    datadog = DatadogClient(
-        api_key=config.datadog.api_key,
-        app_key=config.datadog.app_key
-    )
+    datadog = DatadogClient(config=config.datadog)
 
     # Run ingestion
     ingestor = BanterheartsIngestor(clickhouse, datadog)
