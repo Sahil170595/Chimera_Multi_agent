@@ -1,0 +1,8 @@
+# ClickHouse Dashboard Screenshot
+# 
+# This file should contain the ClickHouse dashboard screenshot showing:
+# - chimera_metrics database with 7 tables
+# - watcher_runs table data with status, lag_seconds, alert_sent columns
+# - Real-time monitoring of agent performance and data freshness
+#
+# Please replace this placeholder with the actual screenshot.

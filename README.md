@@ -8,6 +8,9 @@
 - ✅ **Historical Data**: 31 benchmark runs, 1,243 UI events ingested
 - ✅ **First Episode**: Generated successfully by Council Agent
 - ✅ **Live Dashboard**: Real-time monitoring at [Datadog Dashboard](https://datadoghq.com/dashboard/xiv-ffy-6n4)
+
+
+
 - ✅ **Complete Documentation**: Technical specifications for all integrations
 
 ## Overview
@@ -182,6 +185,20 @@ Episodes must include specific front-matter keys and sections in order:
 - **Datadog Dashboard**: https://datadoghq.com/dashboard/xiv-ffy-6n4
 - **22 Enterprise Widgets**: System health, agent performance, data pipeline, content quality
 - **Real-time Monitoring**: 5-minute refresh with comprehensive alerting
+
+### Data Layer: ClickHouse Monitoring
+
+The Muse Protocol leverages ClickHouse as its high-performance data store for all operational metrics, agent events, and historical data. Below is a snapshot of the ClickHouse dashboard, showcasing the various tables and real-time data being ingested and monitored.
+
+![ClickHouse Dashboard Overview](docs/images/clickhouse-dashboard.png)
+
+This dashboard provides insights into:
+- **Table Structure**: Overview of core tables like `bench_runs`, `llm_events`, `ui_events`, `watcher_runs`, and `episodes`
+- **Agent Status**: Real-time `status` and `lag_seconds` from agents like the Watcher, indicating data freshness and operational health
+- **Data Ingestion**: Metrics on `hearts_rows_found` and `packs_rows_found` to track data flow
+- **Alerting**: Visibility into `alert_sent` flags for critical conditions like `missing_hearts` or `degraded` states
+
+For a deep dive into the ClickHouse schema and its design, refer to the [ClickHouse Schema Technical Specification](docs/CLICKHOUSE_SCHEMA_TECHNICAL_SPEC.md).
 
 ### System Health Checks
 ```powershell
