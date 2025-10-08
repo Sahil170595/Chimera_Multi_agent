@@ -186,6 +186,14 @@ Episodes must include specific front-matter keys and sections in order:
 - **22 Enterprise Widgets**: System health, agent performance, data pipeline, content quality
 - **Real-time Monitoring**: 5-minute refresh with comprehensive alerting
 
+![Datadog Dashboard Overview](docs/images/datadog-dashboard.png)
+
+This enterprise-grade dashboard provides comprehensive monitoring of:
+- **System Health**: Agent status, pipeline performance, and error rates
+- **Data Pipeline**: Real-time metrics on data ingestion and processing
+- **Content Quality**: Episode generation metrics and validation results
+- **Performance Analytics**: Response times, throughput, and resource utilization
+
 ### Data Layer: ClickHouse Monitoring
 
 The Muse Protocol leverages ClickHouse as its high-performance data store for all operational metrics, agent events, and historical data. Below is a snapshot of the ClickHouse dashboard, showcasing the various tables and real-time data being ingested and monitored.
